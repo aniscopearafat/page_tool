@@ -50,14 +50,23 @@ def generate_image():
     time_of_day, scene = get_time_context()
 
     prompt = (
-    "high-quality anime illustration of Gojo Satoru, "
-    "white spiky hair, piercing blue eyes, "
-    "black modern outfit, confident expression, "
-    f"{scene}, "
-    "dynamic composition, cinematic lighting, "
-    "8K, masterpiece, ultra detailed, "
-    "professional anime artwork"
-)
+        "high-quality anime illustration of Kosto, "
+        "a young emotionally broken Bangladeshi man, "
+        "messy slightly long black hair, "
+        "tired deep dark eyes, subtle eye bags, "
+        "pale natural skin, "
+        "wearing a simple dark oversized hoodie, "
+        "quiet and melancholic expression, "
+        "lonely and emotionally exhausted atmosphere, "
+        f"{scene}, "
+        "cinematic composition, "
+        "soft dramatic lighting, "
+        "moody atmosphere, "
+        "subtle shadows, "
+        "emotional storytelling, "
+        "8K, masterpiece, ultra detailed, "
+        "professional anime artwork"
+    )
 
     encoded = urllib.parse.quote(prompt)
 
