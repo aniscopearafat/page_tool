@@ -7,22 +7,23 @@ from dotenv import load_dotenv
 from groq import AsyncGroq
 
 from commands.anime import handle_anime_request, is_anime_request
+from .role import SYSTEM_PROMPT
+
 
 # ============================================================
 # Load Environment
 # ============================================================
 
-BASE_DIR = Path(__file__).resolve().parent
+BASE_DIR = Path(__file__).resolve().parent.parent
+
 load_dotenv(BASE_DIR / ".env")
 
-GROQ_API_KEY = os.getenv("GROQ_API_KEY","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")
-MODEL = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+MODEL = os.getenv(
+    "GROQ_MODEL",
+    "llama-3.3-70b-versatile"
+)
 
-# ============================================================
-# Load System Prompt
-# ============================================================
-
-from .role import SYSTEM_PROMPT
 
 # ============================================================
 # Memory
@@ -30,6 +31,7 @@ from .role import SYSTEM_PROMPT
 
 MEMORY_DIR = BASE_DIR / "runtime" / "roleplay_memory"
 MEMORY_DIR.mkdir(parents=True, exist_ok=True)
+
 
 # ============================================================
 # Keywords
@@ -59,18 +61,22 @@ LOVE_KEYWORDS = [
     "তোমাকে ভালোবাসি",
 ]
 
+
 # ============================================================
 # Memory Helpers
 # ============================================================
-
 
 def load_memory(uid: str):
 
     file = MEMORY_DIR / f"{uid}.json"
 
     if file.exists():
+
         try:
-            return json.loads(file.read_text(encoding="utf-8"))
+            return json.loads(
+                file.read_text(encoding="utf-8")
+            )
+
         except Exception:
             pass
 
@@ -88,7 +94,11 @@ def save_memory(uid: str, memory: dict):
     file = MEMORY_DIR / f"{uid}.json"
 
     file.write_text(
-        json.dumps(memory, ensure_ascii=False, indent=2),
+        json.dumps(
+            memory,
+            ensure_ascii=False,
+            indent=2
+        ),
         encoding="utf-8",
     )
 
@@ -96,7 +106,6 @@ def save_memory(uid: str, memory: dict):
 # ============================================================
 # Helpers
 # ============================================================
-
 
 def detect_name(text: str):
 
@@ -106,9 +115,14 @@ def detect_name(text: str):
 
     for pattern in patterns:
 
-        match = re.search(pattern, text, re.IGNORECASE)
+        match = re.search(
+            pattern,
+            text,
+            re.IGNORECASE
+        )
 
         if match:
+
             return match.group(1).strip()
 
     return None
@@ -118,14 +132,20 @@ def is_image_request(text: str):
 
     text = text.lower()
 
-    return any(word in text for word in IMAGE_KEYWORDS)
+    return any(
+        word in text
+        for word in IMAGE_KEYWORDS
+    )
 
 
 def is_love(text: str):
 
     text = text.lower()
 
-    return any(word in text for word in LOVE_KEYWORDS)
+    return any(
+        word in text
+        for word in LOVE_KEYWORDS
+    )
 
 
 def build_system_prompt(memory):
@@ -133,15 +153,17 @@ def build_system_prompt(memory):
     prompt = SYSTEM_PROMPT
 
     if memory.get("name"):
+
         prompt += (
-            f"\n\nThe user's name is {memory['name']}."
-            " Use their name naturally."
+            f"\n\nব্যবহারকারীর নাম: {memory['name']}."
+            "\nপ্রয়োজনে স্বাভাবিকভাবে নামটি ব্যবহার করতে পারো।"
         )
 
     if memory.get("likes_bot"):
+
         prompt += (
-            "\nThe user likes the assistant."
-            " Reply in a warm and friendly tone."
+            "\nএই ব্যবহারকারী তোমার প্রতি পছন্দ প্রকাশ করেছে।"
+            "\nস্বাভাবিক এবং উষ্ণভাবে কথা বলবে।"
         )
 
     return prompt
@@ -151,36 +173,64 @@ def build_system_prompt(memory):
 # AI Chat
 # ============================================================
 
-
-async def generate_reply(sender_id: str, text: str):
+async def generate_reply(
+    sender_id: str,
+    text: str
+):
 
     if not GROQ_API_KEY:
-        return "⚠️ GROQ_API_KEY is missing."
+
+        return "⚠️ GROQ_API_KEY সেট করা হয়নি।"
 
     memory = load_memory(sender_id)
 
-    # Remember name
+
+    # --------------------------------------------------------
+    # Remember Name
+    # --------------------------------------------------------
 
     name = detect_name(text)
 
     if name and not memory.get("name"):
+
         memory["name"] = name
 
-    # Love detection
+
+    # --------------------------------------------------------
+    # Love Detection
+    # --------------------------------------------------------
 
     if is_love(text):
+
         memory["likes_bot"] = True
 
-        # Image request
+
+    # --------------------------------------------------------
+    # Image Request
+    # --------------------------------------------------------
+
     if is_image_request(text):
-        save_memory(sender_id, memory)
+
+        save_memory(
+            sender_id,
+            memory
+        )
+
         return "__IMAGE__"
 
-    # Anime request
+
+    # --------------------------------------------------------
+    # Anime Request
+    # --------------------------------------------------------
+
     if is_anime_request(text):
+
         return handle_anime_request(text)
 
-    # Build conversation
+
+    # --------------------------------------------------------
+    # Build Conversation
+    # --------------------------------------------------------
 
     messages = [
         {
@@ -188,6 +238,7 @@ async def generate_reply(sender_id: str, text: str):
             "content": build_system_prompt(memory),
         }
     ]
+
 
     for item in memory["history"][-20:]:
 
@@ -204,6 +255,7 @@ async def generate_reply(sender_id: str, text: str):
             }
         )
 
+
     messages.append(
         {
             "role": "user",
@@ -211,11 +263,16 @@ async def generate_reply(sender_id: str, text: str):
         }
     )
 
+
+    # --------------------------------------------------------
     # Ask Groq
+    # --------------------------------------------------------
 
     try:
 
-        client = AsyncGroq(api_key=GROQ_API_KEY)
+        client = AsyncGroq(
+            api_key=GROQ_API_KEY
+        )
 
         response = await client.chat.completions.create(
             model=MODEL,
@@ -224,17 +281,27 @@ async def generate_reply(sender_id: str, text: str):
             max_tokens=300,
         )
 
-        reply = response.choices[0].message.content.strip()
+        reply = (
+            response
+            .choices[0]
+            .message
+            .content
+            .strip()
+        )
 
     except Exception as e:
 
         print("Groq Error:", e)
 
         reply = (
-            "Sorry, I'm having trouble responding right now."
+            "একটু সমস্যা হচ্ছে... "
+            "কিছুক্ষণ পর আবার বলো।"
         )
 
-    # Save history
+
+    # --------------------------------------------------------
+    # Save History
+    # --------------------------------------------------------
 
     memory["history"].append(
         {
@@ -250,8 +317,16 @@ async def generate_reply(sender_id: str, text: str):
         }
     )
 
-    memory["history"] = memory["history"][-40:]
 
-    save_memory(sender_id, memory)
+    memory["history"] = (
+        memory["history"][-40:]
+    )
+
+
+    save_memory(
+        sender_id,
+        memory
+    )
+
 
     return reply

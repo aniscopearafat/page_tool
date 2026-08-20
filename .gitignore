@@ -1,0 +1,12 @@
+
+# Environment secrets
+.env
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Runtime / AI memory
+runtime/
+ai/runtime/
